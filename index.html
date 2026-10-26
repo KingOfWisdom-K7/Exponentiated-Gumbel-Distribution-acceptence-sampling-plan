@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reliability Acceptance Sampling Plan - EGD</title>
+    <!-- Include Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Include Chart.js via CDN for graphing capabilities -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Include the Chart.js datalabels plugin via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <style>
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            background-color: #f3f4f6;
+        }
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            max-width: 900px;
+            margin: auto;
+            padding: 2rem;
+        }
+        .dashboard-card {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            width: 100%;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        label {
+            font-weight: bold;
+            color: #4b5563;
+        }
+        select, input {
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            background-color: #ffffff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            font-family: 'Times New Roman', Times, serif;
+        }
+        select:focus, input:focus {
+            outline: none;
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.5);
+        }
+        .result-found {
+            background-color: #f3e8ff; 
+            border-color: #d8b4fe; 
+        }
+        .result-not-found {
+            background-color: #ffebee; 
+            border-color: #ef9a9a; 
+        }
+        .result-grid-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .result-item {
+            padding: 1rem;
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+        .btn {
+            background-color: #7c3aed;
+            color: #ffffff;
+            transition: transform 0.3s, background-color 0.3s;
+            cursor: pointer;
+            font-family: 'Times New Roman', Times, serif;
+        }
+        .btn:hover {
+            transform: scale(1.02);
+            background-color: #6d28d9;
+        }
+        .chart-container {
+            position: relative;
+            min-height: 450px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4">
+
+    <div class="dashboard-container">
+        <!-- Main Topic -->
+        <h1 class="text-4xl font-extrabold text-center text-gray-900 mb-2">
+            Reliability Acceptance Sampling Plan
+        </h1>
+        <p class="text-xl text-gray-600 text-center mb-8 font-semibold">
+            Exponentiated Gumbel Distribution (EGD) - Bivariate Poisson Framework
+        </p>
+
+        <!-- Interactive Dashboard Card -->
+        <div class="dashboard-card text-center border-t-4 border-purple-500">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                Configure Joint Bivariate Inspection
+            </h2>
+            <p class="text-gray-600 mb-6 italic">Evaluated with shape parameter α = 2</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="input-group">
+                    <label for="p-star">Confidence Level (P*):</label>
+                    <select id="p-star" class="rounded-lg">
+                        <option value="0.75">0.75</option>
+                        <option value="0.90">0.90</option>
+                        <option value="0.95">0.95</option>
+                        <option value="0.99">0.99</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="t-mu">Test Ratio (t/σ₀):</label>
+                    <select id="t-mu" class="rounded-lg">
+                        <!-- Populating ratios relevant to the EGD tables -->
+                        <option value="2.50">2.50</option>
+                        <option value="2.75">2.75</option>
+                        <option value="3.00">3.00</option>
+                        <option value="3.25">3.25</option>
+                        <option value="3.50">3.50</option>
+                        <option value="3.75">3.75</option>
+                        <option value="4.00">4.00</option>
+                        <option value="4.25">4.25</option>
+                        <option value="4.50">4.50</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="c-value">Acceptance (c₁, c₂):</label>
+                    <select id="c-value" class="rounded-lg">
+                        <option value="1">1</option>
+                        <option value="2" selected>2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+                </div>
+            </div>
+
+            <button id="calculate-btn" class="btn font-bold py-3 px-6 rounded-lg w-full md:w-auto shadow-lg text-lg">
+                Calculate & Generate OC Curve
+            </button>
+
+            <!-- Results Section -->
+            <div id="result-box" class="mt-8 p-6 rounded-lg border-2 bg-gray-50 transition-all duration-300 opacity-0 pointer-events-none hidden">
+                <p class="text-gray-700 font-bold mb-2 text-lg">Min. Sample Size (n): <span id="n-display" class="text-4xl text-purple-700 ml-2">--</span></p>
+                <div id="result-container" class="mt-4">
+                    <!-- Dynamic OC Grid Values -->
+                </div>
+                
+                <!-- Chart Area -->
+                <div class="mt-8 chart-container">
+                    <canvas id="oc-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ---------------- MATHEMATICAL FUNCTIONS FOR EGD ----------------
+
+        // Shape parameter is fixed to 2 based on the provided text
+        const ALPHA = 2;
+
+        // Calculate Probability of Failure 'p' based on EGD CDF: F(t; α, σ) = exp(-α * exp(-t/σ))
+        // Since we are expressing in terms of the test ratio t/σ0 and standard ratio σ/σ0:
+        // p = exp(-α * exp( -(t/σ0) / (σ/σ0) ))
+        function calculateEGDProbability(tRatio, sigmaRatio) {
+            const innerExponent = -(tRatio / sigmaRatio);
+            return Math.exp(-ALPHA * Math.exp(innerExponent));
+        }
+
+        // Poisson Cumulative Distribution Function Summation
+        function poissonCDF(mu, c) {
+            let sum = 0;
+            let term = Math.exp(-mu);
+            for (let i = 0; i <= c; i++) {
+                if (i > 0) {
+                    term = term * (mu / i);
+                }
+                sum += term;
+            }
+            return sum;
+        }
+
+        // Calculate Minimum Sample Size 'n'
+        function calculateMinSampleSize(pStar, tRatio, c) {
+            // For finding the sample size, we evaluate at the specified parameter (σ/σ0 = 1)
+            const p = calculateEGDProbability(tRatio, 1.0);
+            const target = 1 - pStar;
+            const max_n = 5000; // Safety upper limit to prevent infinite loops
+
+            for (let n = 1; n <= max_n; n++) {
+                const marginalProb = poissonCDF(n * p, c);
+                const jointProb = marginalProb * marginalProb; // Independent Bivariate Poisson
+
+                if (jointProb <= target) {
+                    return n;
+                }
+            }
+            return "Limit Exceeded";
+        }
+
+        // Calculate Operating Characteristic (OC) Values
+        function calculateOCValues(n, tRatio, c) {
+            // Standard evaluation ratios (σ/σ0) from the tables
+            const sigmaRatios = [2, 4, 6, 8, 10, 12];
+            const ocVals = [];
+
+            for (let sr of sigmaRatios) {
+                const p = calculateEGDProbability(tRatio, sr);
+                const marginalProb = poissonCDF(n * p, c);
+                const jointProb = marginalProb * marginalProb; // Independent Bivariate Poisson
+                ocVals.push(jointProb.toFixed(4));
+            }
+            return { sigmaRatios, ocVals };
+        }
+
+        // ---------------- UI INTERACTION & CHART LOGIC ----------------
+
+        window.onload = function() {
+            const pStarSelect = document.getElementById('p-star');
+            const tMuSelect = document.getElementById('t-mu');
+            const cValueSelect = document.getElementById('c-value');
+            const calculateBtn = document.getElementById('calculate-btn');
+            
+            const resultBox = document.getElementById('result-box');
+            const nDisplay = document.getElementById('n-display');
+            const resultContainer = document.getElementById('result-container');
+
+            // Force Chart.js to use Times New Roman globally
+            Chart.defaults.font.family = "'Times New Roman', Times, serif";
+            Chart.register(ChartDataLabels);
+
+            const ctx = document.getElementById('oc-chart').getContext('2d');
+            let ocChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Pa(p)',
+                        data: [],
+                        borderColor: '#7c3aed',
+                        backgroundColor: 'rgba(124, 58, 237, 0.2)', // Shaded purple fill
+                        borderWidth: 3,
+                        pointRadius: 6,
+                        pointBackgroundColor: '#7c3aed',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: {
+                            display: true,
+                            color: '#1f2937',
+                            font: { weight: 'bold', size: 13, family: "'Times New Roman', Times, serif" },
+                            anchor: 'end',
+                            align: 'top',
+                            offset: 6,
+                            formatter: function(value) { return parseFloat(value).toFixed(3); }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Operating Characteristic Curve',
+                            font: { size: 18, weight: 'bold', family: "'Times New Roman', Times, serif" },
+                            padding: { bottom: 20 }
+                        }
+                    },
+                    layout: {
+                        padding: { top: 30, right: 20 } // Add top padding so data labels aren't cut off
+                    },
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'σ/σ₀ Ratio', font: { weight: 'bold', size: 14 } },
+                            grid: { display: false } // No Gridlines
+                        },
+                        y: { 
+                            title: { display: true, text: 'Acceptance Prob Pa(p)', font: { weight: 'bold', size: 14 } }, 
+                            min: 0, 
+                            max: 1.0, 
+                            grid: { display: false }, // No Gridlines
+                            afterBuildTicks: function(axis) {
+                                // Enforce exact Y-axis ticks
+                                axis.ticks = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0].map(v => ({ value: v }));
+                            }
+                        }
+                    }
+                }
+            });
+
+            calculateBtn.addEventListener('click', () => {
+                const pStar = parseFloat(pStarSelect.value);
+                const tRatio = parseFloat(tMuSelect.value);
+                const c = parseInt(cValueSelect.value);
+
+                // 1. Calculate Minimum Sample Size
+                const n = calculateMinSampleSize(pStar, tRatio, c);
+                nDisplay.textContent = n;
+
+                // 2. Generate OC Values and update Display
+                if(typeof n === "number") {
+                    const { sigmaRatios, ocVals } = calculateOCValues(n, tRatio, c);
+
+                    resultContainer.innerHTML = '';
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'result-grid-row';
+                    
+                    ocVals.forEach((val, idx) => {
+                        const box = document.createElement('div');
+                        box.className = 'result-item';
+                        box.innerHTML = `<p class="text-sm font-bold text-gray-600">σ/σ₀ = ${sigmaRatios[idx]}</p>
+                                         <p class="text-xl font-bold text-purple-700 mt-1">${val}</p>`;
+                        rowDiv.appendChild(box);
+                    });
+                    
+                    resultContainer.appendChild(rowDiv);
+                    
+                    // Reveal results box safely using classes
+                    resultBox.classList.remove('opacity-0', 'pointer-events-none', 'hidden');
+                    resultBox.classList.add('result-found');
+                    
+                    // Update Chart Data
+                    ocChart.data.labels = sigmaRatios;
+                    ocChart.data.datasets[0].data = ocVals.map(v => parseFloat(v));
+                    ocChart.update();
+                } else {
+                    resultContainer.innerHTML = '<p class="text-red-500 font-bold">Calculation limit exceeded. Adjust parameters.</p>';
+                    resultBox.classList.remove('opacity-0', 'pointer-events-none', 'hidden', 'result-found');
+                    resultBox.classList.add('result-not-found');
+                    ocChart.data.datasets[0].data = [];
+                    ocChart.update();
+                }
+            });
+
+            // Trigger initial calculation
+            calculateBtn.click();
+        };
+    </script>
+</body>
+</html>
