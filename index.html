@@ -122,7 +122,7 @@
                     </select>
                 </div>
                 <div class="input-group">
-                    <label for="t-mu">Test Ratio (t/σ₀):</label>
+                    <label for="t-mu">Test Ratio (t/μ₀):</label>
                     <select id="t-mu" class="rounded-lg">
                         <!-- Populating ratios relevant to the EGD tables -->
                         <option value="2.50">2.50</option>
@@ -179,11 +179,11 @@
         // Shape parameter is fixed to 2 based on the provided text
         const ALPHA = 2;
 
-        // Calculate Probability of Failure 'p' based on EGD CDF: F(t; α, σ) = exp(-α * exp(-t/σ))
-        // Since we are expressing in terms of the test ratio t/σ0 and standard ratio σ/σ0:
-        // p = exp(-α * exp( -(t/σ0) / (σ/σ0) ))
-        function calculateEGDProbability(tRatio, sigmaRatio) {
-            const innerExponent = -(tRatio / sigmaRatio);
+        // Calculate Probability of Failure 'p' based on EGD CDF: F(t; α, μ) = exp(-α * exp(-t/μ))
+        // Since we are expressing in terms of the test ratio t/μ0 and standard ratio μ/μ0:
+        // p = exp(-α * exp( -(t/μ0) / (μ/μ0) ))
+        function calculateEGDProbability(tRatio, muRatio) {
+            const innerExponent = -(tRatio / muRatio);
             return Math.exp(-ALPHA * Math.exp(innerExponent));
         }
 
@@ -202,7 +202,7 @@
 
         // Calculate Minimum Sample Size 'n'
         function calculateMinSampleSize(pStar, tRatio, c) {
-            // For finding the sample size, we evaluate at the specified parameter (σ/σ0 = 1)
+            // For finding the sample size, we evaluate at the specified parameter (μ/μ0 = 1)
             const p = calculateEGDProbability(tRatio, 1.0);
             const target = 1 - pStar;
             const max_n = 5000; // Safety upper limit to prevent infinite loops
@@ -220,17 +220,17 @@
 
         // Calculate Operating Characteristic (OC) Values
         function calculateOCValues(n, tRatio, c) {
-            // Standard evaluation ratios (σ/σ0) from the tables
-            const sigmaRatios = [2, 4, 6, 8, 10, 12];
+            // Standard evaluation ratios (μ/μ0) from the tables
+            const muRatios = [2, 4, 6, 8, 10, 12];
             const ocVals = [];
 
-            for (let sr of sigmaRatios) {
-                const p = calculateEGDProbability(tRatio, sr);
+            for (let mr of muRatios) {
+                const p = calculateEGDProbability(tRatio, mr);
                 const marginalProb = poissonCDF(n * p, c);
                 const jointProb = marginalProb * marginalProb; // Independent Bivariate Poisson
                 ocVals.push(jointProb.toFixed(4));
             }
-            return { sigmaRatios, ocVals };
+            return { muRatios, ocVals };
         }
 
         // ---------------- UI INTERACTION & CHART LOGIC ----------------
@@ -292,7 +292,7 @@
                     },
                     scales: {
                         x: { 
-                            title: { display: true, text: 'σ/σ₀ Ratio', font: { weight: 'bold', size: 14 } },
+                            title: { display: true, text: 'μ/μ₀ Ratio', font: { weight: 'bold', size: 14 } },
                             grid: { display: false } // No Gridlines
                         },
                         y: { 
@@ -320,7 +320,7 @@
 
                 // 2. Generate OC Values and update Display
                 if(typeof n === "number") {
-                    const { sigmaRatios, ocVals } = calculateOCValues(n, tRatio, c);
+                    const { muRatios, ocVals } = calculateOCValues(n, tRatio, c);
 
                     resultContainer.innerHTML = '';
                     const rowDiv = document.createElement('div');
@@ -329,7 +329,7 @@
                     ocVals.forEach((val, idx) => {
                         const box = document.createElement('div');
                         box.className = 'result-item';
-                        box.innerHTML = `<p class="text-sm font-bold text-gray-600">σ/σ₀ = ${sigmaRatios[idx]}</p>
+                        box.innerHTML = `<p class="text-sm font-bold text-gray-600">μ/μ₀ = ${muRatios[idx]}</p>
                                          <p class="text-xl font-bold text-purple-700 mt-1">${val}</p>`;
                         rowDiv.appendChild(box);
                     });
@@ -341,7 +341,7 @@
                     resultBox.classList.add('result-found');
                     
                     // Update Chart Data
-                    ocChart.data.labels = sigmaRatios;
+                    ocChart.data.labels = muRatios;
                     ocChart.data.datasets[0].data = ocVals.map(v => parseFloat(v));
                     ocChart.update();
                 } else {
